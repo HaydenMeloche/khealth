@@ -51,7 +51,7 @@ and a `200` status code.
 If any provided checks return `false` then a 500 would be returned.
 
 The health endpoint and ready endpoint can both be disabled using the `healthCheckEnabled` and
-`readyCheckEnabled`.
+`readyCheckEnabled` properties.
 
 ```kotlin
 import dev.hayden.KHealth
