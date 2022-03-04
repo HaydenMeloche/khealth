@@ -14,9 +14,6 @@ import kotlinx.serialization.json.Json
 data class Check(val checkName: String, val check: CheckFunction)
 typealias CheckFunction = suspend () -> Boolean
 
-private var healthChecks = linkedSetOf<Check>()
-private var readyChecks = linkedSetOf<Check>()
-
 class KHealth private constructor(private val config: KHealthConfiguration) {
 
     /**
@@ -27,11 +24,11 @@ class KHealth private constructor(private val config: KHealthConfiguration) {
         pipeline.intercept(ApplicationCallPipeline.Call) {
             val path = call.request.path()
             if (config.readyCheckEnabled && path == config.readyCheckPath) {
-                val (status, responseBody) = processChecks(readyChecks)
+                val (status, responseBody) = processChecks(config.readyChecks)
                 call.respondText(responseBody, ContentType.Application.Json, status)
                 finish()
             } else if (config.healthCheckEnabled && path == config.healthCheckPath) {
-                val (status, responseBody) = processChecks(healthChecks)
+                val (status, responseBody) = processChecks(config.healthChecks)
                 call.respondText(responseBody, ContentType.Application.Json, status)
                 finish()
             }
@@ -74,6 +71,9 @@ class KHealth private constructor(private val config: KHealthConfiguration) {
  * are provided.
  */
 class KHealthConfiguration internal constructor() {
+    internal var healthChecks = linkedSetOf<Check>()
+    internal var readyChecks = linkedSetOf<Check>()
+
     /**
      * The path of the health check endpoint. Defaults to "/health".
      */
