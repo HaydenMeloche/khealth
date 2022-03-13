@@ -111,6 +111,18 @@ internal class KHealthTest {
         }
     }
 
+    @Test
+    internal fun `assert provided route wrapper is used`() {
+        withTestApplication(Application::customRouteWrapper) {
+            handleRequest(HttpMethod.Get, readyEndpoint) {
+                addHeader("Authorization", "Basic dXNlcm5hbWU6dXNlcm5hbWU=")
+            }.apply {
+                assertEquals(HttpStatusCode.OK, response.status())
+                baseAssertion()
+            }
+        }
+    }
+
     companion object {
         private const val readyEndpoint = "/ready"
         private const val healthEndpoint = "/health"

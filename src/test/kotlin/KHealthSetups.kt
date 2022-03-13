@@ -2,6 +2,10 @@ import KHealthTest.Companion.helloRoute
 import dev.hayden.KHealth
 import io.ktor.application.Application
 import io.ktor.application.install
+import io.ktor.auth.UserIdPrincipal
+import io.ktor.auth.authenticate
+import io.ktor.auth.authentication
+import io.ktor.auth.basic
 
 /**
  * A basic configuration of [KHealth] with nothing but defaults
@@ -60,6 +64,32 @@ fun Application.customChecksWithFailure() {
         healthChecks {
             check("another check") { true }
             check("another failing check") { false }
+        }
+    }
+    helloRoute()
+}
+
+/**
+ * A configuration of [KHealth] utilizing 'wrap']
+ */
+fun Application.customRouteWrapper() {
+    // build an example authentication setup for basic auth
+    authentication {
+        basic(name = "basic auth") {
+            realm = "Ktor Server"
+            validate { credentials ->
+                if (credentials.name == credentials.password) {
+                    UserIdPrincipal(credentials.name)
+                } else {
+                    null
+                }
+            }
+        }
+    }
+    install(KHealth) {
+        wrap {
+            // wrap our KHealth endpoints with an authentication block
+            authenticate("basic auth", optional = false, build = it)
         }
     }
     helloRoute()

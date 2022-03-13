@@ -66,7 +66,7 @@ fun main(args: Array<String>) {
 }
 ```
 
-Lastly, if you need to override the default URI paths, that can be done too.
+If you need to override the default URI paths, that can be done too.
 
 ```kotlin
 import dev.hayden.KHealth
@@ -80,9 +80,30 @@ fun main(args: Array<String>) {
   }.start(wait = true)
 }
 ```
+
+For more advanced configurations, KHealth accepts a Ktor `Route` allowing you to wrap the routes
+created by KHealth. An example of this is shown below adding basic authentication to the KHealth
+endpoints.
+
+```kotlin
+authentication {
+  basic(name = "basic auth") {
+    validate { credentials ->
+      // your logic here
+    }
+  }
+}
+install(KHealth) {
+  wrap {
+    // wrap our KHealth endpoints with an authentication block
+    authenticate("basic auth", optional = false, build = it)
+  }
+}
+```
+
 ## Installation
-KHealth uses Jitpack as its repository. This means you will need to add a custom repository for Jitpack
-if you don't already have it.
+KHealth uses Jitpack as its repository. This means you will need to add a custom repository for
+Jitpack if you don't already have it.
 
 For Maven:
 ```xml

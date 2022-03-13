@@ -1,12 +1,18 @@
 package dev.hayden
 
+import io.ktor.application.Application
 import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.ApplicationFeature
 import io.ktor.application.call
+import io.ktor.application.featureOrNull
+import io.ktor.application.install
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-import io.ktor.request.path
 import io.ktor.response.respondText
+import io.ktor.routing.Route
+import io.ktor.routing.Routing
+import io.ktor.routing.get
+import io.ktor.routing.route
 import io.ktor.util.AttributeKey
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -20,20 +26,32 @@ class KHealth private constructor(private val config: KHealthConfiguration) {
      * Interceptor that handles all http requests. If either the health check or ready endpoint are
      * called it will return a custom response with the result of each custom check if any are defined.
      */
-    fun interceptor(pipeline: ApplicationCallPipeline) {
-        pipeline.intercept(ApplicationCallPipeline.Call) {
-            val path = call.request.path()
-            if (config.readyCheckEnabled && path == config.readyCheckPath) {
-                val (status, responseBody) = processChecks(config.readyChecks)
-                call.respondText(responseBody, ContentType.Application.Json, status)
-                finish()
-            } else if (config.healthCheckEnabled && path == config.healthCheckPath) {
-                val (status, responseBody) = processChecks(config.healthChecks)
-                call.respondText(responseBody, ContentType.Application.Json, status)
-                finish()
+    fun interceptor(pipeline: Application) {
+        pipeline.intercept(ApplicationCallPipeline.Monitoring) {
+            val routing: Routing.() -> Unit = {
+                val routing: Route.() -> Unit = {
+                    if (config.readyCheckEnabled) route(config.readyCheckPath) {
+                        get {
+                            val (status, responseBody) = processChecks(config.readyChecks)
+                            call.respondText(responseBody, ContentType.Application.Json, status)
+                            finish()
+                        }
+                    }
+                    if (config.healthCheckEnabled) route(config.healthCheckPath) {
+                        get {
+                            val (status, responseBody) = processChecks(config.healthChecks)
+                            call.respondText(responseBody, ContentType.Application.Json, status)
+                            finish()
+                        }
+                    }
+                }
+
+                config.wrapWith?.invoke(this, routing) ?: routing(this)
             }
 
-            return@intercept
+            pipeline.featureOrNull(Routing)?.apply(routing) ?: pipeline.install(Routing, routing)
+
+            proceed()
         }
     }
 
@@ -57,10 +75,10 @@ class KHealth private constructor(private val config: KHealthConfiguration) {
      * a 'ready' endpoint. Both can be customized with custom checks or completely disabled through [KHealthConfiguration].
      * @author Hayden Meloche
      */
-    companion object Feature : ApplicationFeature<ApplicationCallPipeline, KHealthConfiguration, KHealth> {
+    companion object Feature : ApplicationFeature<Application, KHealthConfiguration, KHealth> {
         override val key = AttributeKey<KHealth>("KHealth")
         override fun install(
-            pipeline: ApplicationCallPipeline,
+            pipeline: Application,
             configure: KHealthConfiguration.() -> Unit
         ) = KHealth(KHealthConfiguration().apply(configure)).apply { interceptor(pipeline) }
     }
@@ -73,6 +91,7 @@ class KHealth private constructor(private val config: KHealthConfiguration) {
 class KHealthConfiguration internal constructor() {
     internal var healthChecks = linkedSetOf<Check>()
     internal var readyChecks = linkedSetOf<Check>()
+    internal var wrapWith: (Route.(next: Route.() -> Unit) -> Unit)? = null
 
     /**
      * The path of the health check endpoint. Defaults to "/health".
@@ -112,6 +131,10 @@ class KHealthConfiguration internal constructor() {
      */
     fun readyChecks(init: CheckBuilder.() -> Unit) {
         readyChecks = CheckBuilder().apply(init).checks
+    }
+
+    fun wrap(block: Route.(next: Route.() -> Unit) -> Unit) {
+        wrapWith = block
     }
 }
 

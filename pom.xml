@@ -41,6 +41,12 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>io.ktor</groupId>
+      <artifactId>ktor-auth</artifactId>
+      <version>${ktor.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.jetbrains.kotlin</groupId>
       <artifactId>kotlin-test-junit5</artifactId>
       <version>${kotlin.version}</version>
