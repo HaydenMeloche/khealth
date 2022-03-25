@@ -3,6 +3,7 @@
 
 Khealth is a simple & customizable health plugin for Ktor.
 
+> As of KHealth version `2.0.0`, Ktor 2 is only supported
 ## Usage
 
 ```kotlin
@@ -118,7 +119,7 @@ For Maven:
 <dependency>
   <groupId>dev.hayden</groupId>
   <artifactId>khealth</artifactId>
-  <version>1.1.0</version>
+  <version>2.0.0</version>
 </dependency>
 ```
 
@@ -132,7 +133,7 @@ allprojects {
 ```
 ```groovy
 dependencies {
-  implementation 'dev.hayden:khealth:1.1.0'
+  implementation 'dev.hayden:khealth:2.0.0'
 }
 ```
 

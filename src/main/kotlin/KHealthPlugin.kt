@@ -1,58 +1,57 @@
 package dev.hayden
 
-import io.ktor.application.Application
-import io.ktor.application.ApplicationCallPipeline
-import io.ktor.application.ApplicationFeature
-import io.ktor.application.call
-import io.ktor.application.featureOrNull
-import io.ktor.application.install
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-import io.ktor.response.respondText
-import io.ktor.routing.Route
-import io.ktor.routing.Routing
-import io.ktor.routing.get
-import io.ktor.routing.route
-import io.ktor.util.AttributeKey
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.createApplicationPlugin
+import io.ktor.server.application.install
+import io.ktor.server.application.pluginOrNull
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.Routing
+import io.ktor.server.routing.get
+import io.ktor.server.routing.route
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 data class Check(val checkName: String, val check: CheckFunction)
 typealias CheckFunction = suspend () -> Boolean
 
-class KHealth private constructor(private val config: KHealthConfiguration) {
+val KHealth = createApplicationPlugin(
+    name = "KHealth",
+    createConfiguration = ::KHealthConfiguration,
+    body = {
+        onCall { call ->
+            KHealthPlugin(this.pluginConfig).apply { interceptor(call) }
+        }
+    }
+)
+
+class KHealthPlugin internal constructor(private val config: KHealthConfiguration) {
 
     /**
      * Interceptor that handles all http requests. If either the health check or ready endpoint are
      * called it will return a custom response with the result of each custom check if any are defined.
      */
-    fun interceptor(pipeline: Application) {
-        pipeline.intercept(ApplicationCallPipeline.Monitoring) {
-            val routing: Routing.() -> Unit = {
-                val routing: Route.() -> Unit = {
-                    if (config.readyCheckEnabled) route(config.readyCheckPath) {
-                        get {
-                            val (status, responseBody) = processChecks(config.readyChecks)
-                            call.respondText(responseBody, ContentType.Application.Json, status)
-                            finish()
-                        }
-                    }
-                    if (config.healthCheckEnabled) route(config.healthCheckPath) {
-                        get {
-                            val (status, responseBody) = processChecks(config.healthChecks)
-                            call.respondText(responseBody, ContentType.Application.Json, status)
-                            finish()
-                        }
+    fun interceptor(call: ApplicationCall) {
+        val routing: Routing.() -> Unit = {
+            val routing: Route.() -> Unit = {
+                if (config.readyCheckEnabled) route(config.readyCheckPath) {
+                    get {
+                        val (status, responseBody) = processChecks(config.readyChecks)
+                        call.respondText(responseBody, ContentType.Application.Json, status)
                     }
                 }
-
-                config.wrapWith?.invoke(this, routing) ?: routing(this)
+                if (config.healthCheckEnabled) route(config.healthCheckPath) {
+                    get {
+                        val (status, responseBody) = processChecks(config.healthChecks)
+                        call.respondText(responseBody, ContentType.Application.Json, status)
+                    }
+                }
             }
-
-            pipeline.featureOrNull(Routing)?.apply(routing) ?: pipeline.install(Routing, routing)
-
-            proceed()
+            config.wrapWith?.invoke(this, routing) ?: routing(this)
         }
+        call.application.pluginOrNull(Routing)?.apply(routing) ?: call.application.install(Routing, routing)
     }
 
     /**
@@ -69,23 +68,10 @@ class KHealth private constructor(private val config: KHealthConfiguration) {
         } else HttpStatusCode.OK
         return Pair(status, Json.encodeToString(checksWithResults))
     }
-
-    /**
-     * KHealth is a small health check library designed for Ktor. It supports both a 'health' endpoint and
-     * a 'ready' endpoint. Both can be customized with custom checks or completely disabled through [KHealthConfiguration].
-     * @author Hayden Meloche
-     */
-    companion object Feature : ApplicationFeature<Application, KHealthConfiguration, KHealth> {
-        override val key = AttributeKey<KHealth>("KHealth")
-        override fun install(
-            pipeline: Application,
-            configure: KHealthConfiguration.() -> Unit
-        ) = KHealth(KHealthConfiguration().apply(configure)).apply { interceptor(pipeline) }
-    }
 }
 
 /**
- * Configuration class used to configure [KHealth]. No values are required to be passed in as defaults
+ * Configuration class used to configure [KHealthPlugin]. No values are required to be passed in as defaults
  * are provided.
  */
 class KHealthConfiguration internal constructor() {
