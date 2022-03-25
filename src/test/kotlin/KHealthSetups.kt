@@ -1,11 +1,11 @@
 import KHealthTest.Companion.helloRoute
 import dev.hayden.KHealth
-import io.ktor.application.Application
-import io.ktor.application.install
-import io.ktor.auth.UserIdPrincipal
-import io.ktor.auth.authenticate
-import io.ktor.auth.authentication
-import io.ktor.auth.basic
+import io.ktor.server.application.Application
+import io.ktor.server.application.install
+import io.ktor.server.auth.UserIdPrincipal
+import io.ktor.server.auth.authenticate
+import io.ktor.server.auth.authentication
+import io.ktor.server.auth.basic
 
 /**
  * A basic configuration of [KHealth] with nothing but defaults
