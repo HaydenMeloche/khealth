@@ -1,5 +1,6 @@
 import KHealthTest.Companion.helloRoute
 import dev.hayden.KHealth
+import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.auth.UserIdPrincipal
@@ -90,6 +91,20 @@ fun Application.customRouteWrapper() {
         wrap {
             // wrap our KHealth endpoints with an authentication block
             authenticate("basic auth", optional = false, build = it)
+        }
+    }
+    helloRoute()
+}
+
+/**
+ * A configuration of [KHealth] with custom status codes set.
+ */
+fun Application.customStatusCodes() {
+    install(KHealth) {
+        successfulCheckStatusCode = HttpStatusCode.Accepted
+        unsuccessfulCheckStatusCode = HttpStatusCode.ExpectationFailed
+        readyChecks {
+            check("failing check") { false }
         }
     }
     helloRoute()

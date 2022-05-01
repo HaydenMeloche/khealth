@@ -38,13 +38,21 @@ class KHealthPlugin internal constructor(private val config: KHealthConfiguratio
             val routing: Route.() -> Unit = {
                 if (config.readyCheckEnabled) route(config.readyCheckPath) {
                     get {
-                        val (status, responseBody) = processChecks(config.readyChecks)
+                        val (status, responseBody) = processChecks(
+                            checkLinkedList = config.readyChecks,
+                            passingStatusCode = config.successfulCheckStatusCode,
+                            failingStatusCode = config.unsuccessfulCheckStatusCode
+                        )
                         call.respondText(responseBody, ContentType.Application.Json, status)
                     }
                 }
                 if (config.healthCheckEnabled) route(config.healthCheckPath) {
                     get {
-                        val (status, responseBody) = processChecks(config.healthChecks)
+                        val (status, responseBody) = processChecks(
+                            checkLinkedList = config.healthChecks,
+                            passingStatusCode = config.successfulCheckStatusCode,
+                            failingStatusCode = config.unsuccessfulCheckStatusCode
+                        )
                         call.respondText(responseBody, ContentType.Application.Json, status)
                     }
                 }
@@ -61,11 +69,15 @@ class KHealthPlugin internal constructor(private val config: KHealthConfiguratio
      * @param checkLinkedList A linkedlist of [Check] to be run.
      * @return A pair including a [HttpStatusCode] and a JSON encoded string of each check with their result.
      */
-    private suspend fun processChecks(checkLinkedList: LinkedHashSet<Check>): Pair<HttpStatusCode, String> {
+    private suspend fun processChecks(
+        checkLinkedList: LinkedHashSet<Check>,
+        passingStatusCode: HttpStatusCode,
+        failingStatusCode: HttpStatusCode
+    ): Pair<HttpStatusCode, String> {
         val checksWithResults = checkLinkedList.associate { Pair(it.checkName, it.check.invoke()) }
         val status = if (checksWithResults.containsValue(false)) {
-            HttpStatusCode.InternalServerError
-        } else HttpStatusCode.OK
+            failingStatusCode
+        } else passingStatusCode
         return Pair(status, Json.encodeToString(checksWithResults))
     }
 }
@@ -78,6 +90,16 @@ class KHealthConfiguration internal constructor() {
     internal var healthChecks = linkedSetOf<Check>()
     internal var readyChecks = linkedSetOf<Check>()
     internal var wrapWith: (Route.(next: Route.() -> Unit) -> Unit)? = null
+
+    /**
+    * The status code returned when a check fails. Defaults to 500 - Internal Server Error.
+    */
+    var unsuccessfulCheckStatusCode = HttpStatusCode.InternalServerError
+
+    /**
+     * The status code returned when all checks pass. Defaults to 200 - OK
+     */
+    var successfulCheckStatusCode = HttpStatusCode.OK
 
     /**
      * The path of the health check endpoint. Defaults to "/health".
