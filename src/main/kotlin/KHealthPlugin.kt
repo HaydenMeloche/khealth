@@ -92,8 +92,8 @@ class KHealthConfiguration internal constructor() {
     internal var wrapWith: (Route.(next: Route.() -> Unit) -> Unit)? = null
 
     /**
-    * The status code returned when a check fails. Defaults to 500 - Internal Server Error.
-    */
+     * The status code returned when a check fails. Defaults to 500 - Internal Server Error.
+     */
     var unsuccessfulCheckStatusCode = HttpStatusCode.InternalServerError
 
     /**

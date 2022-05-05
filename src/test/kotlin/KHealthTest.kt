@@ -125,15 +125,15 @@ internal class KHealthTest {
 
     @Test
     internal fun `assert custom status codes are used when provided`() {
-       withTestApplication(Application::customStatusCodes) {
-           handleRequest(HttpMethod.Get, healthEndpoint).apply {
-               assertEquals(HttpStatusCode.Accepted, response.status())
-           }
-           handleRequest(HttpMethod.Get, readyEndpoint).apply {
-               assertEquals(HttpStatusCode.ExpectationFailed, response.status())
-           }
-           baseAssertion()
-       }
+        withTestApplication(Application::customStatusCodes) {
+            handleRequest(HttpMethod.Get, healthEndpoint).apply {
+                assertEquals(HttpStatusCode.Accepted, response.status())
+            }
+            handleRequest(HttpMethod.Get, readyEndpoint).apply {
+                assertEquals(HttpStatusCode.ExpectationFailed, response.status())
+            }
+            baseAssertion()
+        }
     }
 
     companion object {
