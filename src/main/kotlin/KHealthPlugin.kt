@@ -3,6 +3,7 @@ package dev.hayden
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.call
 import io.ktor.server.application.createApplicationPlugin
 import io.ktor.server.application.install
 import io.ktor.server.application.pluginOrNull
@@ -43,7 +44,7 @@ class KHealthPlugin internal constructor(private val config: KHealthConfiguratio
                             passingStatusCode = config.successfulCheckStatusCode,
                             failingStatusCode = config.unsuccessfulCheckStatusCode
                         )
-                        call.respondText(responseBody, ContentType.Application.Json, status)
+                        this.call.respondText(responseBody, ContentType.Application.Json, status)
                     }
                 }
                 if (config.healthCheckEnabled) route(config.healthCheckPath) {
@@ -53,7 +54,7 @@ class KHealthPlugin internal constructor(private val config: KHealthConfiguratio
                             passingStatusCode = config.successfulCheckStatusCode,
                             failingStatusCode = config.unsuccessfulCheckStatusCode
                         )
-                        call.respondText(responseBody, ContentType.Application.Json, status)
+                        this.call.respondText(responseBody, ContentType.Application.Json, status)
                     }
                 }
             }
