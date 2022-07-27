@@ -132,7 +132,7 @@ For Maven:
 <dependency>
   <groupId>dev.hayden</groupId>
   <artifactId>khealth</artifactId>
-  <version>2.1.0</version>
+  <version>2.1.1</version>
 </dependency>
 ```
 
@@ -146,7 +146,7 @@ allprojects {
 ```
 ```groovy
 dependencies {
-  implementation 'dev.hayden:khealth:2.1.0'
+  implementation 'dev.hayden:khealth:2.1.1'
 }
 ```
 
