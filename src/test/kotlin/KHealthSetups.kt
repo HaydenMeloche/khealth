@@ -110,7 +110,7 @@ fun Application.customStatusCodes() {
     helloRoute()
 }
 
-// THE CONFIG BELOW CAUSE PATH ERRORS
+// THE CONFIG BELOW CAUSES PATH ERRORS
 
 /**
  * A [KHealth] configuration with an invalid healthcheck uri path

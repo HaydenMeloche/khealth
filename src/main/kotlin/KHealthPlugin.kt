@@ -3,13 +3,13 @@ package dev.hayden
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
 import io.ktor.server.application.createApplicationPlugin
 import io.ktor.server.application.install
 import io.ktor.server.application.pluginOrNull
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.Routing
+import io.ktor.server.routing.RoutingRoot
 import io.ktor.server.routing.get
 import io.ktor.server.routing.route
 import kotlinx.serialization.encodeToString
@@ -18,15 +18,11 @@ import kotlinx.serialization.json.Json
 data class Check(val checkName: String, val check: CheckFunction)
 typealias CheckFunction = suspend () -> Boolean
 
-val KHealth = createApplicationPlugin(
-    name = "KHealth",
-    createConfiguration = ::KHealthConfiguration,
-    body = {
-        onCall { call ->
-            KHealthPlugin(this.pluginConfig).apply { interceptor(call) }
-        }
+val KHealth = createApplicationPlugin("KHealth", ::KHealthConfiguration) {
+    onCall { call ->
+        KHealthPlugin(pluginConfig).apply { interceptor(call) }
     }
-)
+}
 
 class KHealthPlugin internal constructor(private val config: KHealthConfiguration) {
 
@@ -44,7 +40,7 @@ class KHealthPlugin internal constructor(private val config: KHealthConfiguratio
                             passingStatusCode = config.successfulCheckStatusCode,
                             failingStatusCode = config.unsuccessfulCheckStatusCode
                         )
-                        this.call.respondText(responseBody, ContentType.Application.Json, status)
+                        call.respondText(responseBody, ContentType.Application.Json, status)
                     }
                 }
                 if (config.healthCheckEnabled) route(config.healthCheckPath) {
@@ -54,13 +50,13 @@ class KHealthPlugin internal constructor(private val config: KHealthConfiguratio
                             passingStatusCode = config.successfulCheckStatusCode,
                             failingStatusCode = config.unsuccessfulCheckStatusCode
                         )
-                        this.call.respondText(responseBody, ContentType.Application.Json, status)
+                        call.respondText(responseBody, ContentType.Application.Json, status)
                     }
                 }
             }
             config.wrapWith?.invoke(this, routing) ?: routing(this)
         }
-        call.application.pluginOrNull(Routing)?.apply(routing) ?: call.application.install(Routing, routing)
+        call.application.pluginOrNull(RoutingRoot)?.apply(routing) ?: call.application.install(RoutingRoot, routing)
     }
 
     /**

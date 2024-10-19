@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>dev.hayden</groupId>
   <artifactId>khealth</artifactId>
-  <version>2.1.1</version>
+  <version>3.0.0</version>
   <packaging>jar</packaging>
   <name>khealth</name>
 
@@ -20,12 +20,12 @@
   </issueManagement>
 
   <properties>
-    <junit.jupiter.version>5.8.2</junit.jupiter.version>
+    <junit.jupiter.version>5.11.2</junit.jupiter.version>
     <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
-    <kotlin.version>1.6.20</kotlin.version>
-    <ktor.version>2.0.0</ktor.version>
+    <kotlin.version>2.0.21</kotlin.version>
+    <ktor.version>3.0.0</ktor.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <serialization.version>1.3.2</serialization.version>
+    <serialization.version>1.7.3</serialization.version>
   </properties>
 
   <dependencies>
@@ -94,27 +94,6 @@
 
   <build>
     <plugins>
-      <plugin>
-        <groupId>com.github.ekryd.sortpom</groupId>
-        <artifactId>sortpom-maven-plugin</artifactId>
-        <version>3.0.0</version>
-        <configuration>
-          <createBackupFile>false</createBackupFile>
-          <sortPlugins>groupId</sortPlugins>
-          <sortProperties>true</sortProperties>
-          <sortDependencies>groupId</sortDependencies>
-          <verifyFail>stop</verifyFail>
-          <verifyFailOn>strict</verifyFailOn>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>sort</goal>
-            </goals>
-            <phase>verify</phase>
-          </execution>
-        </executions>
-      </plugin>
       <plugin>
         <groupId>com.github.z3d1k</groupId>
         <artifactId>ktlint-maven-plugin</artifactId>
