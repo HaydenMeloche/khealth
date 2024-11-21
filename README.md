@@ -4,7 +4,7 @@
 Khealth is a simple & customizable health plugin for Ktor. 
 
 ## Compatability
-KHealth `3.0.0` is built with Ktor 3 and Kotlin 2.
+KHealth `3.0.1` is built with Ktor 3 and Kotlin 2.
  
 For Ktor 2 and Kotlin 1 support, please see the [V2 branch.](https://github.com/HaydenMeloche/khealth/tree/v2)
 
@@ -150,7 +150,7 @@ allprojects {
 ```
 ```groovy
 dependencies {
-  implementation 'dev.hayden:khealth:3.0.0'
+  implementation 'dev.hayden:khealth:3.0.1'
 }
 ```
 
