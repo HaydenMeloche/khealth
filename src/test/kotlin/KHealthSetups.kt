@@ -17,6 +17,13 @@ fun Application.defaultKHealth() {
 }
 
 /**
+ * A basic configuration of [KHealth] with no routes
+ */
+fun Application.defaultKHealthNoRoutes() {
+    install(KHealth)
+}
+
+/**
  * A configuration of [KHealth] where both check endpoints are overridden
  */
 fun Application.overridePathUris() {

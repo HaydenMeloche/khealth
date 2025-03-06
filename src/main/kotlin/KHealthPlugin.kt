@@ -2,16 +2,13 @@ package dev.hayden
 
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.createApplicationPlugin
-import io.ktor.server.application.install
-import io.ktor.server.application.pluginOrNull
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.Routing
-import io.ktor.server.routing.RoutingRoot
 import io.ktor.server.routing.get
 import io.ktor.server.routing.route
+import io.ktor.server.routing.routing
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -19,44 +16,41 @@ data class Check(val checkName: String, val check: CheckFunction)
 typealias CheckFunction = suspend () -> Boolean
 
 val KHealth = createApplicationPlugin("KHealth", ::KHealthConfiguration) {
-    onCall { call ->
-        KHealthPlugin(pluginConfig).apply { interceptor(call) }
+    application.routing {
+        KHealthPlugin(pluginConfig).registerRoutes(this)
     }
 }
 
 class KHealthPlugin internal constructor(private val config: KHealthConfiguration) {
 
     /**
-     * Interceptor that handles all http requests. If either the health check or ready endpoint are
-     * called it will return a custom response with the result of each custom check if any are defined.
+     * Registers the ready and health endpoints
      */
-    fun interceptor(call: ApplicationCall) {
-        val routing: Routing.() -> Unit = {
-            val routing: Route.() -> Unit = {
-                if (config.readyCheckEnabled) route(config.readyCheckPath) {
-                    get {
-                        val (status, responseBody) = processChecks(
-                            checkLinkedList = config.readyChecks,
-                            passingStatusCode = config.successfulCheckStatusCode,
-                            failingStatusCode = config.unsuccessfulCheckStatusCode
-                        )
-                        call.respondText(responseBody, ContentType.Application.Json, status)
-                    }
-                }
-                if (config.healthCheckEnabled) route(config.healthCheckPath) {
-                    get {
-                        val (status, responseBody) = processChecks(
-                            checkLinkedList = config.healthChecks,
-                            passingStatusCode = config.successfulCheckStatusCode,
-                            failingStatusCode = config.unsuccessfulCheckStatusCode
-                        )
-                        call.respondText(responseBody, ContentType.Application.Json, status)
-                    }
+    fun registerRoutes(routing: Routing) {
+        val routeSetup: Route.() -> Unit = {
+            if (config.readyCheckEnabled) route(config.readyCheckPath) {
+                get {
+                    val (status, responseBody) = processChecks(
+                        checkLinkedList = config.readyChecks,
+                        passingStatusCode = config.successfulCheckStatusCode,
+                        failingStatusCode = config.unsuccessfulCheckStatusCode
+                    )
+                    call.respondText(responseBody, ContentType.Application.Json, status)
                 }
             }
-            config.wrapWith?.invoke(this, routing) ?: routing(this)
+            if (config.healthCheckEnabled) route(config.healthCheckPath) {
+                get {
+                    val (status, responseBody) = processChecks(
+                        checkLinkedList = config.healthChecks,
+                        passingStatusCode = config.successfulCheckStatusCode,
+                        failingStatusCode = config.unsuccessfulCheckStatusCode
+                    )
+                    call.respondText(responseBody, ContentType.Application.Json, status)
+                }
+            }
         }
-        call.application.pluginOrNull(RoutingRoot)?.apply(routing) ?: call.application.install(RoutingRoot, routing)
+
+        config.wrapWith?.invoke(routing, routeSetup) ?: routeSetup(routing)
     }
 
     /**

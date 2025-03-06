@@ -1,8 +1,10 @@
+import dev.hayden.KHealth
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
+import io.ktor.server.application.install
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
@@ -27,6 +29,19 @@ internal class KHealthTest {
             assertEquals(HttpStatusCode.OK, status)
         }
         baseAssertion()
+    }
+
+    @Test
+    fun `assert the basic configuration exposes the ready and health endpoints with no other routes`() = testApplication {
+        application {
+            defaultKHealthNoRoutes()
+        }
+        client.get(readyEndpoint).apply {
+            assertEquals(HttpStatusCode.OK, status)
+        }
+        client.get(healthEndpoint).apply {
+            assertEquals(HttpStatusCode.OK, status)
+        }
     }
 
     @Test
@@ -97,6 +112,43 @@ internal class KHealthTest {
             assertEquals(true, responseAsMap["another check"])
         }
         baseAssertion()
+    }
+
+    @Test
+    fun `assert custom checks are not ran more than once`() = testApplication {
+        var checksRan = 0
+        application {
+            install(KHealth) {
+                readyChecks {
+                    check("a sample check") {
+                        checksRan++
+                        true
+                    }
+                }
+                healthChecks {
+                    check("another check") {
+                        checksRan++
+                        true
+                    }
+                }
+            }
+            helloRoute()
+        }
+        client.get(readyEndpoint).apply {
+            assertEquals(HttpStatusCode.OK, status)
+            val responseAsMap: Map<String, Boolean> = Json.decodeFromString(bodyAsText())
+            assertEquals(1, responseAsMap.size)
+            assertEquals(true, responseAsMap["a sample check"])
+        }
+        client.get(healthEndpoint).apply {
+            assertEquals(HttpStatusCode.OK, status)
+            val responseAsMap: Map<String, Boolean> = Json.decodeFromString(bodyAsText())
+            assertEquals(1, responseAsMap.size)
+            assertEquals(true, responseAsMap["another check"])
+        }
+        baseAssertion()
+
+        assertEquals(2, checksRan)
     }
 
     @Test
